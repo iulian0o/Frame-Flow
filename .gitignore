@@ -1,1 +1,26 @@
 iulian-prod-frameflow_accessKeys.csv
+
+# Java / Maven
+**/target/
+*.class
+*.log
+
+# JavaScript tooling
+node_modules/
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Local configuration
+.env
+.env.*
+!.env.example
+
+# AWS credential exports
+*_accessKeys.csv
+
+# Operating system files
+.DS_Store
+Thumbs.db

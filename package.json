@@ -1,0 +1,15 @@
+{
+  "name": "frameflow-tooling",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Git hooks and commit validation for Frame Flow",
+  "scripts": {
+    "prepare": "husky",
+    "lint:commits": "commitlint"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.4",
+    "@commitlint/config-conventional": "21.2.4",
+    "husky": "9.1.7"
+  }
+}

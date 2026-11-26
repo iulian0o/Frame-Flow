@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  commitlint:
+    name: Commit messages
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+
+    env:
+      HUSKY: "0"
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - run: npm ci
+
+      - name: Validate PR commits
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: >
+          npx --no -- commitlint
+          --from "$BASE_SHA"
+          --to "$HEAD_SHA"
+          --verbose
+
+  build:
+    name: Build and tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: content_db
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+
+    env:
+      DB_URL: jdbc:mysql://localhost:3306/content_db
+      DB_USERNAME: root
+      DB_PASSWORD: root
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: maven
+
+      - name: Validate Compose configuration
+        run: docker compose config --quiet
+
+      - name: Build all services and run tests
+        run: ./mvnw -B --no-transfer-progress verify
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            **/target/surefire-reports/**
+            **/target/failsafe-reports/**
+          if-no-files-found: ignore
